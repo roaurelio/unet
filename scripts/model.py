@@ -150,7 +150,7 @@ def data_generator(X, y, disc_locations, resize_to=128, train_or_test='train', b
                 idx = test_idx[:batch_size]
             else:
                 idx = np.random.choice(test_idx, size=batch_size)
-        
+                
         batch_X = [X[i][disc_locations[i][0]:disc_locations[i][2], disc_locations[i][1]:disc_locations[i][3]] 
                    for i in idx]
         batch_X = [np.rollaxis(img, 2) for img in batch_X]
@@ -171,6 +171,9 @@ def data_generator(X, y, disc_locations, resize_to=128, train_or_test='train', b
             batch_X_orig, batch_Y_orig = batch_X.copy(), batch_y.copy()
         
         batch_X, batch_y = preprocess(batch_X, batch_y, train_or_test)
+        
+        plt.imshow(np.rollaxis(batch_X[0], 0, 3))
+        plt.show()
                 
         if not return_orig:
             yield batch_X, batch_y
