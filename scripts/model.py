@@ -170,10 +170,12 @@ def data_generator(X, y, disc_locations, resize_to=128, train_or_test='train', b
         if return_orig:
             batch_X_orig, batch_Y_orig = batch_X.copy(), batch_y.copy()
         
+        #plt.imshow(np.rollaxis(batch_X[0], 0, 3))
+        #plt.show()
+        
         batch_X, batch_y = preprocess(batch_X, batch_y, train_or_test)
         
         plt.imshow(np.rollaxis(batch_X[0], 0, 3))
-        plt.show()
                 
         if not return_orig:
             yield batch_X, batch_y
