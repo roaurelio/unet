@@ -84,22 +84,22 @@ def get_unet_light(img_rows=256, img_cols=256):
     conv5 = Dropout(0.3)(conv5)
     conv5 = Conv2D(64, kernel_size=3, activation='relu', padding='same')(conv5)
 
-    up6 = Concatenate(axis=1)([UpSampling2D(size=(2, 2))(conv5), conv4])
+    up6 = Concatenate(axis=3)([UpSampling2D(size=(2, 2))(conv5), conv4])
     conv6 = Conv2D(64, kernel_size=3, activation='relu', padding='same')(up6)
     conv6 = Dropout(0.3)(conv6)
     conv6 = Conv2D(64, kernel_size=3, activation='relu', padding='same')(conv6)
 
-    up7 = Concatenate(axis=1)([UpSampling2D(size=(2, 2))(conv6), conv3])
+    up7 = Concatenate(axis=3)([UpSampling2D(size=(2, 2))(conv6), conv3])
     conv7 = Conv2D(64, kernel_size=3, activation='relu', padding='same')(up7)
     conv7 = Dropout(0.3)(conv7)
     conv7 = Conv2D(64, kernel_size=3, activation='relu', padding='same')(conv7)
 
-    up8 = Concatenate(axis=1)([UpSampling2D(size=(2, 2))(conv7), conv2])
+    up8 = Concatenate(axis=3)([UpSampling2D(size=(2, 2))(conv7), conv2])
     conv8 = Conv2D(64, kernel_size=3, activation='relu', padding='same')(up8)
     conv8 = Dropout(0.3)(conv8)
     conv8 = Conv2D(64, kernel_size=3, activation='relu', padding='same')(conv8)
 
-    up9 = Concatenate(axis=1)([UpSampling2D(size=(2, 2))(conv8), conv1])
+    up9 = Concatenate(axis=3)([UpSampling2D(size=(2, 2))(conv8), conv1])
     conv9 = Conv2D(32, kernel_size=3, activation='relu', padding='same')(up9)
     conv9 = Dropout(0.3)(conv9)
     conv9 = Conv2D(32, kernel_size=3, activation='relu', padding='same')(conv9)
@@ -107,7 +107,7 @@ def get_unet_light(img_rows=256, img_cols=256):
     conv10 = Conv2D(1, kernel_size=1, activation='sigmoid', padding='same')(conv9)
     #conv10 = Flatten()(conv10)
 
-    return Model(input=inputs, output=conv10)
+    return Model(inputs=inputs, outputs=conv10)
     
 train_idx = np.arange(0, 49)
 test_idx  = np.arange(0, 50)
