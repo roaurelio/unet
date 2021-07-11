@@ -1,4 +1,4 @@
-import keras
+from tensorflow import keras
 from keras.models import Sequential, Model
 from keras.layers import Dense, Dropout, Activation, Flatten, BatchNormalization, \
     Conv2D, MaxPooling2D, ZeroPadding2D, Input, Embedding, \
@@ -59,7 +59,7 @@ def th_to_tf_encoding(X):
     return np.rollaxis(X, 1, 4)
 	
 def get_unet_light(img_rows=256, img_cols=256):
-    inputs = Input((3, img_rows, img_cols))
+    inputs = Input((img_rows, img_cols, 3))
     conv1 = Conv2D(32, kernel_size=3, activation='relu', padding='same')(inputs)
     conv1 = Dropout(0.3)(conv1)
     conv1 = Conv2D(32, kernel_size=3, activation='relu', padding='same')(conv1)
@@ -107,9 +107,7 @@ def get_unet_light(img_rows=256, img_cols=256):
     conv10 = Conv2D(1, kernel_size=1, activation='sigmoid', padding='same')(conv9)
     #conv10 = Flatten()(conv10)
 
-    model = Model(input=inputs, output=conv10)
-
-    return model
+    return Model(input=inputs, output=conv10)
     
 train_idx = np.arange(0, 49)
 test_idx  = np.arange(0, 50)
@@ -133,7 +131,7 @@ def preprocess(batch_X, batch_y, train_or_test='train'):
     batch_X = [skimage.exposure.equalize_adapthist(batch_X[i])
                for i in range(len(batch_X))]
     batch_X = np.array(batch_X)
-    batch_X = tf_to_th_encoding(batch_X)
+    #batch_X = tf_to_th_encoding(batch_X)
     return batch_X, batch_y
 
 
@@ -166,7 +164,8 @@ def data_generator(X, y, disc_locations, resize_to=128, train_or_test='train', b
         batch_y = [skimage.transform.resize(img, (resize_to, resize_to))[..., None] for img in batch_y]
         batch_y = np.array(batch_y).copy()
         batch_X = tf_to_th_encoding(batch_X)
-        batch_y = tf_to_th_encoding(batch_y)
+        #batch_y = tf_to_th_encoding(batch_y)
+                
         if return_orig:
             batch_X_orig, batch_Y_orig = batch_X.copy(), batch_y.copy()
         
@@ -174,9 +173,7 @@ def data_generator(X, y, disc_locations, resize_to=128, train_or_test='train', b
         #plt.show()
         
         batch_X, batch_y = preprocess(batch_X, batch_y, train_or_test)
-        
-        plt.imshow(np.rollaxis(batch_X[0], 0, 3))
-                
+                        
         if not return_orig:
             yield batch_X, batch_y
         else:
