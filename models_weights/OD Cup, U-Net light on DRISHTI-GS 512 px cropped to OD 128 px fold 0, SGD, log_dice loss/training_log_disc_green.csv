@@ -1,0 +1,2 @@
+epoch,dice_metric,loss,mean_IOU_gpu,val_dice_metric,val_loss,val_mean_IOU_gpu
+0,9.6643635e-05,0.9988869338324575,4.834189e-05,0.0,0.9581355955086502,0.0

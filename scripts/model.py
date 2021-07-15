@@ -12,6 +12,7 @@ import numpy as np
 import skimage
 from dual_IDG import DualImageDataGenerator
 import matplotlib.pyplot as plt
+import cv2
 
 
 def mean_IOU_gpu(X, Y):
@@ -109,8 +110,9 @@ def get_unet_light(img_rows=256, img_cols=256):
 
     return Model(inputs=inputs, outputs=conv10)
     
-train_idx = np.arange(0, 49)
-test_idx  = np.arange(0, 50)
+train_idx = np.arange(0, 50)
+test_idx  = np.arange(0, 51)
+K.set_image_data_format('channels_last')
 
 train_idg = DualImageDataGenerator(horizontal_flip=True, vertical_flip=True,
                                    rotation_range=20, width_shift_range=0.1, height_shift_range=0.1,
@@ -178,4 +180,70 @@ def data_generator(X, y, disc_locations, resize_to=128, train_or_test='train', b
             yield batch_X, batch_y
         else:
             yield batch_X, batch_y, batch_X_orig, batch_Y_orig
- 
+
+def ellipseFitting(img):
+    contours, hierarchy = cv2.findContours(img.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
+    ellipse = np.zeros(img.shape)
+    diametro = []
+    for ind, cont in enumerate(contours):
+        (x,y),(MA,ma),angle = cv2.fitEllipse(cont)
+        diametro.append((MA, ma))
+        #feed the parsed parameters into cv2.ellipse
+        cv2.ellipse(ellipse,(int(x),int(y)),(int(MA/2), int(ma/2)),angle,0,360,(255,255,255),0)
+    return ellipse, diametro
+
+
+def predict(red_channel_test, img_list, mask_list, model):
+    pred_iou, pred_dice = [], []
+    pred_result = []
+
+    for i, img_no in enumerate(test_idx):
+        print('image #{}'.format(img_no))
+        img = red_channel_test[img_no]
+        batch_X = img_list[i:i + 1]
+        batch_z = mask_list[i:i + 1]
+
+        pred = (model.predict(batch_X)[0] > 0.5).astype(np.float64)
+        pred = pred.reshape(128,128,)
+        pred_result.append(pred)
+        corr = (batch_z)[0, ..., 0]
+
+        fig = plt.figure(figsize=(9, 4))
+        ax = fig.add_subplot(1, 3, 1)
+        ax.imshow(pred, cmap=plt.cm.Greys_r)
+        ax.set_title('Predicted')
+        ax = fig.add_subplot(1, 3, 2)
+        ax.imshow(corr, cmap=plt.cm.Greys_r)
+        ax.set_title('Correct')
+        ax = fig.add_subplot(1, 3, 3)
+        ax.imshow((batch_X)[0])
+        ax.set_title('Image')
+        plt.show()
+
+        cur_iou = K.eval(mean_IOU_gpu(pred[None, None, ...], corr[None, None, ...]))
+        cur_dice = K.eval(dice(pred[None, None, ...], corr[None, None, ...]))
+        print('IOU: {}\nDice: {}'.format(cur_iou, cur_dice))
+        pred_iou.append(cur_iou)
+        pred_dice.append(cur_dice)
+        
+        return pred_iou, pred_dice, pred_result
+    
+def calculate_cdr(pred_cup, pred_disc):
+    cdrs = []
+    for i, img_no in enumerate(test_idx):
+        cup = pred_cup[i]
+        disc = pred_disc[i]
+
+        c = cv2.Canny(cup.astype(np.uint8), 1,1)
+        d = cv2.Canny(disc.astype(np.uint8), 1,1)
+
+        el_c, diam_c = ellipseFitting(c)
+        el_d, diam_d = ellipseFitting(d)
+
+        if len(diam_d) > 0 and len(diam_c) > 0:
+            cdr = diam_c[0][1]/diam_d[0][1]
+            cdrs.append(cdr)
+            print('image #{} - cdr = {}'.format(img_no, cdr))
+            
+    return cdrs
+            
