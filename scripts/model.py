@@ -3,19 +3,18 @@ from tensorflow.keras.models import Sequential, Model
 from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten, BatchNormalization, \
     Conv2D, MaxPooling2D, ZeroPadding2D, Input, Embedding, \
     Lambda, UpSampling2D, Cropping2D, Concatenate
-#from tensorflow.keras.utils import np_utils
 from tensorflow.keras.optimizers import SGD, Adam
 from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler, ReduceLROnPlateau, CSVLogger
 from tensorflow.keras.preprocessing.image import ImageDataGenerator
 from tensorflow.keras import backend as K
 import numpy as np
 import skimage
+import skimage.transform
+import skimage.exposure
 from dual_IDG import DualImageDataGenerator
 import matplotlib.pyplot as plt
 import cv2
 import os
-
-
 
 
 def mean_IOU_gpu(X, Y):
@@ -279,8 +278,7 @@ def calculate_cdr(pred_cup, pred_disc):
         if len(diam_d) > 0 and len(diam_c) > 0:
             cdr = diam_c[0][1]/diam_d[0][1]
             cdrs.append(cdr)
-            print('image #{} - cdr = {}'.format(img_no, cdr))
-            
+            print('image #{} - cdr = {}'.format(img_no, cdr))            
     return cdrs
 
 
