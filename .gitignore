@@ -9,3 +9,4 @@ grant proposals/*
 .idea/
 .idea/*
 data/*
+models_weights/*

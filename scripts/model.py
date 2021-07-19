@@ -1,18 +1,21 @@
 from tensorflow import keras
-from keras.models import Sequential, Model
-from keras.layers import Dense, Dropout, Activation, Flatten, BatchNormalization, \
+from tensorflow.keras.models import Sequential, Model
+from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten, BatchNormalization, \
     Conv2D, MaxPooling2D, ZeroPadding2D, Input, Embedding, \
     Lambda, UpSampling2D, Cropping2D, Concatenate
-from keras.utils import np_utils
-from keras.optimizers import SGD, Adam
-from keras.callbacks import ModelCheckpoint, LearningRateScheduler, ReduceLROnPlateau, CSVLogger
-from keras.preprocessing.image import ImageDataGenerator
-from keras import backend as K
+#from tensorflow.keras.utils import np_utils
+from tensorflow.keras.optimizers import SGD, Adam
+from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler, ReduceLROnPlateau, CSVLogger
+from tensorflow.keras.preprocessing.image import ImageDataGenerator
+from tensorflow.keras import backend as K
 import numpy as np
 import skimage
 from dual_IDG import DualImageDataGenerator
 import matplotlib.pyplot as plt
 import cv2
+import os
+
+
 
 
 def mean_IOU_gpu(X, Y):
@@ -193,13 +196,13 @@ def ellipseFitting(img):
     return ellipse, diametro
 
 
-def predict(red_channel_test, img_list, mask_list, model):
+def predict(images, img_list, mask_list, model):
     pred_iou, pred_dice = [], []
     pred_result = []
 
     for i, img_no in enumerate(test_idx):
         print('image #{}'.format(img_no))
-        img = red_channel_test[img_no]
+        img = images[img_no]
         batch_X = img_list[i:i + 1]
         batch_z = mask_list[i:i + 1]
 
@@ -227,6 +230,39 @@ def predict(red_channel_test, img_list, mask_list, model):
         pred_dice.append(cur_dice)
         
         return pred_iou, pred_dice, pred_result
+
+
+arch_name = "OD Cup, U-Net light on DRISHTI-GS 512 px cropped to OD 128 px fold 0, SGD, log_dice loss"
+weights_folder = os.path.join(os.path.dirname(os.getcwd()), 'models_weights',
+                              '{}'.format(arch_name))
+
+def folder(folder_name):
+    if not os.path.exists(folder_name):
+        os.makedirs(folder_name)
+    return folder_name
+
+def train(images, masks, disc_locations, path, model, epochs):
+    history = model.fit_generator(data_generator(images, masks, disc_locations, train_or_test='train', batch_size=1), 
+                              steps_per_epoch=999,
+                              max_queue_size=1,                                               
+                              epochs=epochs, verbose=1,                              
+                              callbacks=[CSVLogger(os.path.join(folder(weights_folder), 'training_log_'+path+'.csv')),
+                                         ModelCheckpoint(os.path.join(folder(weights_folder),
+                                               'last_checkpoint_'+path+'.hdf5'),
+                                               monitor='val_loss', mode='min', save_best_only=True, 
+                                               save_weights_only=False, verbose=0)])
+    
+    
+    
+def get_color_channel(channel, images):
+    img_channel_train = []
+    for i in (images):
+        img = np.zeros(i.shape)
+        img[:,:,channel] = i[:,:,channel]
+        img_channel_train.append(img)
+    return img_channel_train
+    
+
     
 def calculate_cdr(pred_cup, pred_disc):
     cdrs = []
@@ -246,4 +282,13 @@ def calculate_cdr(pred_cup, pred_disc):
             print('image #{} - cdr = {}'.format(img_no, cdr))
             
     return cdrs
-            
+
+
+def calculate_area(pred_cup, pred_disc):
+    areas = []
+    for i in img in enumerate(test_idx):
+        cup = np.array(pred_cup[i]).sum()
+        disc = np.array(pred_disc[i]).sum()
+        areas.append(cup/disc)
+    return areas
+        
