@@ -228,7 +228,7 @@ def predict(images, img_list, mask_list, model):
         pred_iou.append(cur_iou)
         pred_dice.append(cur_dice)
         
-        return pred_iou, pred_dice, pred_result
+    return pred_iou, pred_dice, pred_result
 
 
 arch_name = "OD Cup, U-Net light on DRISHTI-GS 512 px cropped to OD 128 px fold 0, SGD, log_dice loss"
@@ -242,7 +242,7 @@ def folder(folder_name):
 
 def train(images, masks, disc_locations, path, model, epochs):
     history = model.fit_generator(data_generator(images, masks, disc_locations, train_or_test='train', batch_size=1), 
-                              steps_per_epoch=999,
+                              steps_per_epoch=99,
                               max_queue_size=1,                                               
                               epochs=epochs, verbose=1,                              
                               callbacks=[CSVLogger(os.path.join(folder(weights_folder), 'training_log_'+path+'.csv')),
@@ -284,9 +284,10 @@ def calculate_cdr(pred_cup, pred_disc):
 
 def calculate_area(pred_cup, pred_disc):
     areas = []
-    for i in img in enumerate(test_idx):
-        cup = np.array(pred_cup[i]).sum()
-        disc = np.array(pred_disc[i]).sum()
-        areas.append(cup/disc)
+    for i in test_idx:
+        cup = np.array(pred_cup[i], dtype='float').sum()
+        disc = np.array(pred_disc[i], dtype='float').sum()
+        if (disc > 0):
+            areas.append(cup/disc)
     return areas
         
