@@ -131,11 +131,9 @@ def preprocess(batch_X, batch_y, train_or_test='train'):
         batch_X, batch_y = next(train_idg.flow(batch_X, batch_y, batch_size=len(batch_X), shuffle=False))
     elif train_or_test == 'test':
         batch_X, batch_y = next(test_idg.flow(batch_X, batch_y, batch_size=len(batch_X), shuffle=False))
-    batch_X = th_to_tf_encoding(batch_X)
     batch_X = [skimage.exposure.equalize_adapthist(batch_X[i])
                for i in range(len(batch_X))]
     batch_X = np.array(batch_X)
-    #batch_X = tf_to_th_encoding(batch_X)
     return batch_X, batch_y
 
 
@@ -167,17 +165,15 @@ def data_generator(X, y, disc_locations, resize_to=128, train_or_test='train', b
         batch_y = [img[..., 0] for img in batch_y]
         batch_y = [skimage.transform.resize(img, (resize_to, resize_to))[..., None] for img in batch_y]
         batch_y = np.array(batch_y).copy()
-        batch_X = tf_to_th_encoding(batch_X)
-        #batch_y = tf_to_th_encoding(batch_y)
                 
         if return_orig:
             batch_X_orig, batch_Y_orig = batch_X.copy(), batch_y.copy()
         
-        #plt.imshow(np.rollaxis(batch_X[0], 0, 3))
+        batch_X, batch_y = preprocess(batch_X, batch_y, train_or_test)
+        
+        #plt.imshow(batch_X[0])
         #plt.show()
         
-        batch_X, batch_y = preprocess(batch_X, batch_y, train_or_test)
-                        
         if not return_orig:
             yield batch_X, batch_y
         else:
