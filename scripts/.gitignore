@@ -8,3 +8,5 @@ scripts/.ipynb_checkpoints/
 grant proposals/*
 .idea/
 .idea/*
+.ipynb_checkpoints/*
+models_weights/*

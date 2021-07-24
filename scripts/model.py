@@ -5,16 +5,20 @@ from tensorflow.keras.layers import Dense, Dropout, Activation, Flatten, BatchNo
     Lambda, UpSampling2D, Cropping2D, Concatenate
 from tensorflow.keras.optimizers import SGD, Adam
 from tensorflow.keras.callbacks import ModelCheckpoint, LearningRateScheduler, ReduceLROnPlateau, CSVLogger
-from tensorflow.keras.preprocessing.image import ImageDataGenerator
-from tensorflow.keras import backend as K
-import numpy as np
-import skimage
-import skimage.transform
-import skimage.exposure
-from dual_IDG import DualImageDataGenerator
-import matplotlib.pyplot as plt
-import cv2
 import os
+from process_images import *
+from tensorflow.keras import backend as K
+import matplotlib.pyplot as plt
+
+NUM_EPOCHS = 500
+SPE = 99
+
+def create_compile_model(img_size):
+    model = get_unet_light(img_rows=img_size, img_cols=img_size)
+    model.compile(optimizer=SGD(learning_rate=1e-4, momentum=0.95),
+                  loss=log_dice_loss,
+                  metrics=[mean_IOU_gpu, dice_metric])
+    return model
 
 
 def mean_IOU_gpu(X, Y):
@@ -54,12 +58,6 @@ def dice_metric(y_true, y_pred):
     y_true_f = K.cast(K.greater(y_true, 0.5), 'float32')
     y_pred_f = K.cast(K.greater(y_pred, 0.5), 'float32')
     return dice(y_true_f, y_pred_f)
-	
-def tf_to_th_encoding(X):
-    return np.rollaxis(X, 3, 1)
-
-def th_to_tf_encoding(X):
-    return np.rollaxis(X, 1, 4)
 	
 def get_unet_light(img_rows=256, img_cols=256):
     inputs = Input((img_rows, img_cols, 3))
@@ -108,94 +106,12 @@ def get_unet_light(img_rows=256, img_cols=256):
     conv9 = Conv2D(32, kernel_size=3, activation='relu', padding='same')(conv9)
 
     conv10 = Conv2D(1, kernel_size=1, activation='sigmoid', padding='same')(conv9)
-    #conv10 = Flatten()(conv10)
 
     return Model(inputs=inputs, outputs=conv10)
-    
-train_idx = np.arange(0, 50)
-test_idx  = np.arange(0, 51)
-K.set_image_data_format('channels_last')
-
-train_idg = DualImageDataGenerator(horizontal_flip=True, vertical_flip=True,
-                                   rotation_range=20, width_shift_range=0.1, height_shift_range=0.1,
-                                   zoom_range=(0.8, 1.2),
-                                   fill_mode='constant', cval=0.0)
-test_idg = DualImageDataGenerator()
-
-def preprocess(batch_X, batch_y, train_or_test='train'):
-    batch_X = batch_X / 255.0
-    # the following line thresholds segmentation mask for DRISHTI-GS, since it contains averaged soft maps:
-    batch_y = batch_y >= 0.5
-    
-    if train_or_test == 'train':
-        batch_X, batch_y = next(train_idg.flow(batch_X, batch_y, batch_size=len(batch_X), shuffle=False))
-    elif train_or_test == 'test':
-        batch_X, batch_y = next(test_idg.flow(batch_X, batch_y, batch_size=len(batch_X), shuffle=False))
-    batch_X = th_to_tf_encoding(batch_X)
-    batch_X = [skimage.exposure.equalize_adapthist(batch_X[i])
-               for i in range(len(batch_X))]
-    batch_X = np.array(batch_X)
-    #batch_X = tf_to_th_encoding(batch_X)
-    return batch_X, batch_y
 
 
-def data_generator(X, y, disc_locations, resize_to=128, train_or_test='train', batch_size=3, return_orig=False, stationary=False):
-    """Gets random batch of data, 
-    divides by 255,
-    feeds it to DualImageDataGenerator."""
-      
-    while True:
-        if train_or_test == 'train':
-            idx = np.random.choice(train_idx, size=batch_size)
-        elif train_or_test == 'test':
-            if stationary:
-                idx = test_idx[:batch_size]
-            else:
-                idx = np.random.choice(test_idx, size=batch_size)
-                
-        batch_X = [X[i][disc_locations[i][0]:disc_locations[i][2], disc_locations[i][1]:disc_locations[i][3]] 
-                   for i in idx]
-        batch_X = [np.rollaxis(img, 2) for img in batch_X]
 
-        batch_X = [skimage.transform.resize(np.rollaxis(img, 0, 3), (resize_to, resize_to))
-                   for img in batch_X]
-        batch_X = np.array(batch_X).copy()
-        
-        
-        batch_y = [y[i][disc_locations[i][0]:disc_locations[i][2], disc_locations[i][1]:disc_locations[i][3]] 
-                   for i in idx]
-        batch_y = [img[..., 0] for img in batch_y]
-        batch_y = [skimage.transform.resize(img, (resize_to, resize_to))[..., None] for img in batch_y]
-        batch_y = np.array(batch_y).copy()
-        batch_X = tf_to_th_encoding(batch_X)
-        #batch_y = tf_to_th_encoding(batch_y)
-                
-        if return_orig:
-            batch_X_orig, batch_Y_orig = batch_X.copy(), batch_y.copy()
-        
-        #plt.imshow(np.rollaxis(batch_X[0], 0, 3))
-        #plt.show()
-        
-        batch_X, batch_y = preprocess(batch_X, batch_y, train_or_test)
-                        
-        if not return_orig:
-            yield batch_X, batch_y
-        else:
-            yield batch_X, batch_y, batch_X_orig, batch_Y_orig
-
-def ellipseFitting(img):
-    contours, hierarchy = cv2.findContours(img.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
-    ellipse = np.zeros(img.shape)
-    diametro = []
-    for ind, cont in enumerate(contours):
-        (x,y),(MA,ma),angle = cv2.fitEllipse(cont)
-        diametro.append((MA, ma))
-        #feed the parsed parameters into cv2.ellipse
-        cv2.ellipse(ellipse,(int(x),int(y)),(int(MA/2), int(ma/2)),angle,0,360,(255,255,255),0)
-    return ellipse, diametro
-
-
-def predict(images, img_list, mask_list, model):
+def predict(images, img_list, mask_list, model, img_size):
     pred_iou, pred_dice = [], []
     pred_result = []
 
@@ -206,7 +122,7 @@ def predict(images, img_list, mask_list, model):
         batch_z = mask_list[i:i + 1]
 
         pred = (model.predict(batch_X)[0] > 0.5).astype(np.float64)
-        pred = pred.reshape(128,128,)
+        pred = pred.reshape(img_size,img_size,)
         pred_result.append(pred)
         corr = (batch_z)[0, ..., 0]
 
@@ -240,10 +156,11 @@ def folder(folder_name):
         os.makedirs(folder_name)
     return folder_name
 
-def train(images, masks, disc_locations, path, model, epochs):
-    history = model.fit_generator(data_generator(images, masks, disc_locations, train_or_test='train', batch_size=1), 
-                              steps_per_epoch=99,
-                              max_queue_size=1,                                               
+def train(images, masks, disc_locations, path, model, epochs, X_valid, Y_valid, img_size, spe):
+    history = model.fit(data_generator(images, masks, disc_locations, img_size, train_or_test='train', batch_size=1), 
+                              steps_per_epoch=spe,
+                              max_queue_size=1,
+                              validation_data=(X_valid, Y_valid),
                               epochs=epochs, verbose=1,                              
                               callbacks=[CSVLogger(os.path.join(folder(weights_folder), 'training_log_'+path+'.csv')),
                                          ModelCheckpoint(os.path.join(folder(weights_folder),
@@ -251,43 +168,7 @@ def train(images, masks, disc_locations, path, model, epochs):
                                                monitor='val_loss', mode='min', save_best_only=True, 
                                                save_weights_only=False, verbose=0)])
     
-    
-    
-def get_color_channel(channel, images):
-    img_channel_train = []
-    for i in (images):
-        img = np.zeros(i.shape)
-        img[:,:,channel] = i[:,:,channel]
-        img_channel_train.append(img)
-    return img_channel_train
-    
+    return history
+      
 
-    
-def calculate_cdr(pred_cup, pred_disc):
-    cdrs = []
-    for i, img_no in enumerate(test_idx):
-        cup = pred_cup[i]
-        disc = pred_disc[i]
-
-        c = cv2.Canny(cup.astype(np.uint8), 1,1)
-        d = cv2.Canny(disc.astype(np.uint8), 1,1)
-
-        el_c, diam_c = ellipseFitting(c)
-        el_d, diam_d = ellipseFitting(d)
-
-        if len(diam_d) > 0 and len(diam_c) > 0:
-            cdr = diam_c[0][1]/diam_d[0][1]
-            cdrs.append(cdr)
-            print('image #{} - cdr = {}'.format(img_no, cdr))            
-    return cdrs
-
-
-def calculate_area(pred_cup, pred_disc):
-    areas = []
-    for i in test_idx:
-        cup = np.array(pred_cup[i], dtype='float').sum()
-        disc = np.array(pred_disc[i], dtype='float').sum()
-        if (disc > 0):
-            areas.append(cup/disc)
-    return areas
         
