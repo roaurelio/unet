@@ -12,6 +12,7 @@ import matplotlib.pyplot as plt
 
 NUM_EPOCHS = 500
 SPE = 99
+IMG_SIZE=128
 
 def create_compile_model(img_size):
     model = get_unet_light(img_rows=img_size, img_cols=img_size)

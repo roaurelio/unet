@@ -10,3 +10,4 @@ grant proposals/*
 .idea/*
 data/*
 models_weights/*
+scripts/__pycache__/*
