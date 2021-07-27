@@ -22,13 +22,19 @@ def calculate_cdr(pred_cup, pred_disc, test_idx):
         c = cv2.Canny(cup.astype(np.uint8), 1,1)
         d = cv2.Canny(disc.astype(np.uint8), 1,1)
 
-        el_c, diam_c = ellipseFitting(c)
-        el_d, diam_d = ellipseFitting(d)
+        try:
+            el_c, diam_c = ellipseFitting(c)
+            el_d, diam_d = ellipseFitting(d)
 
-        if len(diam_d) > 0 and len(diam_c) > 0:
-            cdr = diam_c[0][1]/diam_d[0][1]
-            cdrs.append(cdr)
-            print('image #{} - cdr = {}'.format(img_no, cdr))            
+            if len(diam_d) > 0 and len(diam_c) > 0:
+                cdr = diam_c[0][1]/diam_d[0][1]
+                cdrs.append(cdr)
+                print('image #{} - cdr = {}'.format(img_no, cdr)) 
+            else:
+                cdrs.append(0)
+        except:
+            print('erro')
+            cdrs.append(0)
     return cdrs
 
 
