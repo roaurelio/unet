@@ -12,7 +12,14 @@ def ellipseFitting(img):
         diametro.append((MA, ma))
         cv2.ellipse(ellipse,(int(x),int(y)),(int(MA/2), int(ma/2)),angle,0,360,(255,255,255),0)
     return ellipse, diametro
-	
+
+def obtain_ellipse(img):
+    try:
+        return ellipseFitting(img)
+    except:
+        kernel = np.ones((10,10),np.uint8)
+        return ellipseFitting(cv.morphologyEx(img, cv.MORPH_CLOSE, kernel))
+
 def calculate_cdr(pred_cup, pred_disc, test_idx):
     cdrs = []
     for i, img_no in enumerate(test_idx):
@@ -23,8 +30,8 @@ def calculate_cdr(pred_cup, pred_disc, test_idx):
         d = cv2.Canny(disc.astype(np.uint8), 1,1)
 
         try:
-            el_c, diam_c = ellipseFitting(c)
-            el_d, diam_d = ellipseFitting(d)
+            el_c, diam_c = obtain_ellipse(c)
+            el_d, diam_d = obtain_ellipse(d)
 
             if len(diam_d) > 0 and len(diam_c) > 0:
                 cdr = diam_c[0][1]/diam_d[0][1]
@@ -49,7 +56,7 @@ def calculate_area(pred_cup, pred_disc, test_idx):
 
 def plot_results(result, epochs):
     epoch = range(1, epochs + 1)
-    fig = plt.figure(figsize=(7,6))
+    fig = plt.figure(figsize=(12,6))
     
     ax = fig.add_subplot(1,3,1)
     ax.plot(epoch, result.history['dice_metric'])
