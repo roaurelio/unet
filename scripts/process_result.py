@@ -34,7 +34,7 @@ def calculate_cdr(pred_cup, pred_disc, test_idx):
             el_d, diam_d = obtain_ellipse(d)
 
             if len(diam_d) > 0 and len(diam_c) > 0:
-                cdr = diam_c[0][1]/diam_d[0][1]
+                cdr = max(diam_c)[1]/max(diam_d)[1]
                 cdrs.append(cdr)
                 print('image #{} - cdr = {}'.format(img_no, cdr)) 
             else:
