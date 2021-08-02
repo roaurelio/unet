@@ -22,6 +22,8 @@ def obtain_ellipse(img):
 
 def calculate_cdr(pred_cup, pred_disc, test_idx):
     cdrs = []
+    diametros_cup = []
+    diametros_disc = []
     for i, img_no in enumerate(test_idx):
         cup = pred_cup[i]
         disc = pred_disc[i]
@@ -32,6 +34,9 @@ def calculate_cdr(pred_cup, pred_disc, test_idx):
         try:
             el_c, diam_c = obtain_ellipse(c)
             el_d, diam_d = obtain_ellipse(d)
+            
+            diametros_cup.append(diam_c)
+            diametros_disc.append(diam_d)
 
             if len(diam_d) > 0 and len(diam_c) > 0:
                 cdr = max(diam_c)[1]/max(diam_d)[1]
@@ -42,7 +47,7 @@ def calculate_cdr(pred_cup, pred_disc, test_idx):
         except:
             print('erro')
             cdrs.append(0)
-    return cdrs
+    return cdrs, diametros_cup, diametros_disc
 
 
 def calculate_area(pred_cup, pred_disc, test_idx):
@@ -84,6 +89,6 @@ def plot_results(result, epochs):
     plt.show()
     
 def create_table_result(pred_cup, pred_disc, test_idx):
-    cdrs = calculate_cdr(pred_cup, pred_disc, test_idx)
+    cdrs, diametros_cup, diametros_disc = calculate_cdr(pred_cup, pred_disc, test_idx)
     areas = calculate_area(pred_cup, pred_disc, test_idx)
-    return pd.DataFrame(data={'cdr': cdrs, 'area': areas})
+    return {'cdr': cdrs, 'area': areas}, diametros_cup, diametros_disc
