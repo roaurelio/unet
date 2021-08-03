@@ -35,8 +35,8 @@ def calculate_cdr(pred_cup, pred_disc, test_idx):
             el_c, diam_c = obtain_ellipse(c)
             el_d, diam_d = obtain_ellipse(d)
             
-            diametros_cup.append(diam_c)
-            diametros_disc.append(diam_d)
+            diametros_cup.append(max(diam_c))
+            diametros_disc.append(max(diam_d))
 
             if len(diam_d) > 0 and len(diam_c) > 0:
                 cdr = max(diam_c)[1]/max(diam_d)[1]
