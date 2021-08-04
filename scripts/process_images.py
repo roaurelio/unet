@@ -16,6 +16,12 @@ train_idg = DualImageDataGenerator(horizontal_flip=True, vertical_flip=True,
                                    fill_mode='constant', cval=0.0)
 test_idg = DualImageDataGenerator()
 
+def convert_to_hsv_color(images):
+    img_channel = []
+    for i in (images):
+        img_channel.append(cv2.cvtColor(i, cv2.COLOR_BGR2HSV))
+    return img_channel
+
 def convert_to_hsv(channel, images):
     img_channel = []
     for i in (images):
