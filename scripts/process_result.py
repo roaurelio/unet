@@ -2,6 +2,7 @@ import cv2
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
+import sys
  
 def ellipseFitting(img):
     contours, hierarchy = cv2.findContours(img.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
@@ -18,7 +19,7 @@ def obtain_ellipse(img):
         return ellipseFitting(img)
     except:
         kernel = np.ones((10,10),np.uint8)
-        return ellipseFitting(cv.morphologyEx(img, cv.MORPH_CLOSE, kernel))
+        return ellipseFitting(cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel))
 
 def calculate_cdr(pred_cup, pred_disc, test_idx):
     cdrs = []
@@ -34,18 +35,20 @@ def calculate_cdr(pred_cup, pred_disc, test_idx):
         try:
             el_c, diam_c = obtain_ellipse(c)
             el_d, diam_d = obtain_ellipse(d)
-            
-            diametros_cup.append(max(diam_c))
-            diametros_disc.append(max(diam_d))
 
             if len(diam_d) > 0 and len(diam_c) > 0:
+                diametros_cup.append(max(diam_c))
+                diametros_disc.append(max(diam_d))
+            
                 cdr = max(diam_c)[1]/max(diam_d)[1]
                 cdrs.append(cdr)
                 print('image #{} - cdr = {}'.format(img_no, cdr)) 
             else:
+                diametros_cup.append((0,0))
+                diametros_disc.append((0,0))
                 cdrs.append(0)
-        except:
-            print('erro')
+        except ValueError as error:
+            print(error)
             cdrs.append(0)
     return cdrs, diametros_cup, diametros_disc
 
@@ -61,7 +64,7 @@ def calculate_area(pred_cup, pred_disc, test_idx):
 
 def plot_results(result, epochs):
     epoch = range(1, epochs + 1)
-    fig = plt.figure(figsize=(12,6))
+    fig = plt.figure(figsize=(15,6))
     
     ax = fig.add_subplot(1,3,1)
     ax.plot(epoch, result.history['dice_metric'])
