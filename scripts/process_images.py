@@ -5,6 +5,8 @@ import skimage
 import skimage.transform
 import skimage.exposure
 import cv2
+import matplotlib.pyplot as plt
+
 
 train_idx = np.arange(0, 50)
 test_idx  = np.arange(0, 51)
@@ -21,6 +23,25 @@ def convert_to_hsv_color(images):
     for i in (images):
         img_channel.append(cv2.cvtColor(i, cv2.COLOR_BGR2HSV))
     return img_channel
+
+def convert_to_lab_color(images):
+    img_channel = []
+    for i in (images):
+        img_channel.append(cv2.cvtColor(i, cv2.COLOR_BGR2LAB))
+    return img_channel
+
+def convert_to_gray(images):
+    img_channel = []
+    for i in (images):
+        gray = cv2.cvtColor(i, cv2.COLOR_BGR2GRAY)
+        img = np.zeros(i.shape)
+        img[:,:,0] = gray
+        img[:,:,1] = gray
+        img[:,:,2] = gray
+        
+        img_channel.append(img)
+    return img_channel
+
 
 def convert_to_hsv(channel, images):
     img_channel = []
