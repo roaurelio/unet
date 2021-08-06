@@ -60,6 +60,8 @@ def calculate_area(pred_cup, pred_disc, test_idx):
         disc = np.array(pred_disc[i], dtype='float').sum()
         if (disc > 0):
             areas.append(cup/disc)
+        else:
+            areas.append(0)
     return areas
 
 def plot_results(result, epochs):
