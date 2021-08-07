@@ -93,7 +93,17 @@ def plot_results(result, epochs):
     ax.legend(['Train','Val'], loc='upper left')
     plt.show()
     
-def create_table_result(pred_cup, pred_disc, test_idx):
+def save_diameters(diametros_cup, diametros_disc, file_name):
+    cup = np.array(diametros_cup)
+    disc = np.array(diametros_disc)
+    df = pd.DataFrame(data={'cup - dm': cup[:,0], 'cup - dM': cup[:,1], 'disc - dm': disc[:,0], 'disc - dM': disc[:,1]})
+    df.to_csv(file_name+'diameters.csv', decimal=',')
+    return df
+    
+def create_table_result(pred_cup, pred_disc, test_idx, file_name):
     cdrs, diametros_cup, diametros_disc = calculate_cdr(pred_cup, pred_disc, test_idx)
     areas = calculate_area(pred_cup, pred_disc, test_idx)
-    return {'cdr': cdrs, 'area': areas}, diametros_cup, diametros_disc
+    df = pd.DataFrame(data = {'cdr': cdrs, 'area': areas})
+    df.to_csv(file_name+'cdrs.csv', decimal=',')
+    df_diameters = save_diameters(diametros_cup, diametros_disc, file_name)
+    return df, df_diameters

@@ -9,6 +9,7 @@ import os
 from process_images import *
 from tensorflow.keras import backend as K
 import matplotlib.pyplot as plt
+from datetime import datetime
 
 NUM_EPOCHS = 500
 SPE = 99
@@ -149,16 +150,20 @@ def predict(images, img_list, mask_list, model, img_size):
 
 
 arch_name = "OD Cup, U-Net light on DRISHTI-GS 512 px cropped to OD 128 px fold 0, SGD, log_dice loss"
-weights_folder = os.path.join(os.path.dirname(os.getcwd()), 'models_weights',
-                              '{}'.format(arch_name))
+weights_folder_cup = os.path.join(os.path.dirname(os.getcwd()), 'models_weights',
+                              '{},{}'.format(datetime.now().strftime('%d.%m,%H:%M'), arch_name))
+
+arch_name = "OD Disc, U-Net light on DRISHTI-GS 512 px cropped to OD 128 px fold 0, SGD, log_dice loss"
+weights_folder_disc = os.path.join(os.path.dirname(os.getcwd()), 'models_weights',
+                              '{},{}'.format(datetime.now().strftime('%d.%m,%H:%M'), arch_name))
 
 def folder(folder_name):
     if not os.path.exists(folder_name):
         os.makedirs(folder_name)
     return folder_name
 
-def train(images, masks, disc_locations, path, model, epochs, X_valid, Y_valid, img_size, spe):
-    history = model.fit(data_generator(images, masks, disc_locations, img_size, train_or_test='train', batch_size=1), 
+def train(images, masks, disc_locations, path, model, epochs, X_valid, Y_valid, img_size, spe, weights_folder):
+    return model.fit(data_generator(images, masks, disc_locations, img_size, train_or_test='train', batch_size=1), 
                               steps_per_epoch=spe,
                               max_queue_size=1,
                               validation_data=(X_valid, Y_valid),
@@ -169,7 +174,9 @@ def train(images, masks, disc_locations, path, model, epochs, X_valid, Y_valid, 
                                                monitor='val_loss', mode='min', save_best_only=True, 
                                                save_weights_only=False, verbose=0)])
     
-    return history
+def train_cup(images, masks, disc_locations, path, model, epochs, X_valid, Y_valid, img_size, spe):
+    return train(images, masks, disc_locations, path, model, epochs, X_valid, Y_valid, img_size, spe, weights_folder_cup)
       
-
+def train_disc(images, masks, disc_locations, path, model, epochs, X_valid, Y_valid, img_size, spe):
+    return train(images, masks, disc_locations, path, model, epochs, X_valid, Y_valid, img_size, spe, weights_folder_disc)
         
