@@ -8,6 +8,8 @@ import pandas as pd
 import cv2
 import imhandle as imh
 import skimage
+from skimage.transform import resize
+
 
 HEALTHY = 0
 GLAUCOMA_OR_SUSPECT = 1
@@ -208,25 +210,27 @@ def extract_RIM_ONE_v3(db_folder, expert='avg', return_disc=True, return_cup=Tru
 
     for i in xrange(len(X_all)):
         side = result_resolution[0]
+        
         if file_codes_all[i][-1] == 'L':
-            X_all[i] = X_all[i][:, :orig_resolution[1] / 2]
+            X_all[i] = X_all[i][:, :int(orig_resolution[1] / 2)]
         elif file_codes_all[i][-1] == 'R':
-            X_all[i] = X_all[i][:, orig_resolution[1] / 2:]
+            X_all[i] = X_all[i][:, int(orig_resolution[1] / 2):]
         if return_disc:
-            disc_all[i] = disc_all[i][:, :orig_resolution[1] / 2]
+            disc_all[i] = disc_all[i][:, :int(orig_resolution[1] / 2)]
         if return_cup:
-            cup_all[i] = cup_all[i][:, :orig_resolution[1] / 2]
+            cup_all[i] = cup_all[i][:, :int(orig_resolution[1] / 2)]
         else:
             raise imh.ImLibException('image {} has no L/R characteristic'.format(file_codes_all[i]))
 
-        X_all[i] = imh.resize_image_to_square(X_all[i], side, pad_cval=0)
+        X_all[i] = resize(X_all[i], (side, side))
         if return_disc:
-            disc_all[i] = imh.resize_image_to_square(disc_all[i], side, pad_cval=0)
+            disc_all[i] = resize(disc_all[i], (side, side))            
             disc_all[i] = disc_all[i].reshape(disc_all[i].shape + (1,))
         if return_cup:
-            cup_all[i] = imh.resize_image_to_square(cup_all[i], side, pad_cval=0)
+            cup_all[i] = resize(cup_all[i], (side, side))
             cup_all[i] = cup_all[i].reshape(cup_all[i].shape + (1,))
-
+            
+            
     if return_disc:
         if return_cup:
             return X_all, disc_all, cup_all, file_codes_all, is_ill
@@ -267,16 +271,19 @@ def extract_DRISHTI_GS_train(db_folder, return_disc=True, return_cup=True):
                             drishtiGS_{:03}_cupsegSoftmap.png
     """
     result_resolution = (2040, 2040)
+    
 
     disc_all, cup_all, file_codes_all = [], [], []
     set_path = os.path.join(db_folder, 'Drishti-GS1_files', 'Training')
     images_path = os.path.join(set_path, 'Images')
+    
+    
     X_all, file_names = imh.load_set(images_path)
     rel_file_names = [os.path.split(fn)[-1] for fn in file_names]
     rel_file_names_wo_ext = [fn[:fn.rfind('.')] for fn in rel_file_names]
     file_codes = ['Training' + fn[fn.find('_'):] for fn in rel_file_names_wo_ext]
     file_codes_all.extend(file_codes)
-
+    
     for fn in rel_file_names_wo_ext:
         if return_disc:
             disc_segmn = imh.load_image(os.path.join(set_path, 'GT', fn,

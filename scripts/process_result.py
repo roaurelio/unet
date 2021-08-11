@@ -3,6 +3,8 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import sys
+import os
+from datetime import datetime
  
 def ellipseFitting(img):
     contours, hierarchy = cv2.findContours(img.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
@@ -93,17 +95,25 @@ def plot_results(result, epochs):
     ax.legend(['Train','Val'], loc='upper left')
     plt.show()
     
+path_results = os.path.join(os.path.dirname(os.getcwd()), 'results',
+                                  '{},{}'.format(datetime.now().strftime('%d.%m,%H:%M'), 'results_cdr'))
+
+def folder(folder_name):
+    if not os.path.exists(folder_name):
+        os.makedirs(folder_name)
+    return folder_name
+    
 def save_diameters(diametros_cup, diametros_disc, file_name):
     cup = np.array(diametros_cup)
     disc = np.array(diametros_disc)
     df = pd.DataFrame(data={'cup - dm': cup[:,0], 'cup - dM': cup[:,1], 'disc - dm': disc[:,0], 'disc - dM': disc[:,1]})
-    df.to_csv(file_name+'diameters.csv', decimal=',')
+    df.to_csv(os.path.join(folder(path_results), file_name+'_diameters.csv'), decimal=',', sep='\t', index=False)
     return df
     
 def create_table_result(pred_cup, pred_disc, test_idx, file_name):
     cdrs, diametros_cup, diametros_disc = calculate_cdr(pred_cup, pred_disc, test_idx)
     areas = calculate_area(pred_cup, pred_disc, test_idx)
     df = pd.DataFrame(data = {'cdr': cdrs, 'area': areas})
-    df.to_csv(file_name+'cdrs.csv', decimal=',')
+    df.to_csv(os.path.join(folder(path_results), file_name+'_cdrs.csv'), decimal=',', sep='\t', index=False)
     df_diameters = save_diameters(diametros_cup, diametros_disc, file_name)
     return df, df_diameters
