@@ -96,7 +96,7 @@ def plot_results(result, epochs):
     plt.show()
     
 path_results = os.path.join(os.path.dirname(os.getcwd()), 'results',
-                                  '{},{}'.format(datetime.now().strftime('%d.%m,%H:%M'), 'results_cdr'))
+                                  '{},{}'.format(datetime.now().strftime('%d.%m,%H-%M'), 'results_cdr'))
 
 def folder(folder_name):
     if not os.path.exists(folder_name):
@@ -117,3 +117,12 @@ def create_table_result(pred_cup, pred_disc, test_idx, file_name):
     df.to_csv(os.path.join(folder(path_results), file_name+'_cdrs.csv'), decimal=',', sep='\t', index=False)
     df_diameters = save_diameters(diametros_cup, diametros_disc, file_name)
     return df, df_diameters
+
+
+def save_iou_dice(iou, dice, arq):
+    path_results = os.path.join(os.path.dirname(os.getcwd()), 'results')
+    path_results = os.path.join(folder(path_results), '{},{}'.format(datetime.now().strftime('%d.%m,%H-%M'), arq))
+
+    with open(path_results, 'w') as arquivo:
+        arquivo.write('iou: ' + str(iou).replace('.', ',')+'\n')
+        arquivo.write('dice: ' + str(dice).replace('.', ','))

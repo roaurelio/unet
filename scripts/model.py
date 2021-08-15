@@ -15,9 +15,9 @@ NUM_EPOCHS = 500
 SPE = 99
 IMG_SIZE=128
 
-def create_compile_model(img_size):
+def create_compile_model(img_size, lr):
     model = get_unet_light(img_rows=img_size, img_cols=img_size)
-    model.compile(optimizer=SGD(learning_rate=1e-4, momentum=0.95),
+    model.compile(optimizer=SGD(learning_rate=lr, momentum=0.95),
                   loss=log_dice_loss,
                   metrics=[mean_IOU_gpu, dice_metric])
     return model
@@ -151,11 +151,11 @@ def predict(images, img_list, mask_list, model, img_size):
 
 arch_name = "OD Cup, U-Net light on DRISHTI-GS 512 px cropped to OD 128 px fold 0, SGD, log_dice loss"
 weights_folder_cup = os.path.join(os.path.dirname(os.getcwd()), 'models_weights',
-                              '{},{}'.format(datetime.now().strftime('%d.%m,%H:%M'), arch_name))
+                              '{},{}'.format(datetime.now().strftime('%d.%m,%H-%M'), arch_name))
 
 arch_name = "OD Disc, U-Net light on DRISHTI-GS 512 px cropped to OD 128 px fold 0, SGD, log_dice loss"
 weights_folder_disc = os.path.join(os.path.dirname(os.getcwd()), 'models_weights',
-                              '{},{}'.format(datetime.now().strftime('%d.%m,%H:%M'), arch_name))
+                              '{},{}'.format(datetime.now().strftime('%d.%m,%H-%M'), arch_name))
 
 def folder(folder_name):
     if not os.path.exists(folder_name):

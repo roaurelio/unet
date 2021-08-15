@@ -18,9 +18,9 @@ IMG_SIZE=128
 K.set_image_data_format('channels_last')
 
 
-def create_compile_model(img_size):
+def create_compile_model(img_size, lr):
     model = get_unet_light(img_rows=img_size, img_cols=img_size)
-    model.compile(optimizer=SGD(learning_rate=3e-4, momentum=0.95),
+    model.compile(optimizer=SGD(learning_rate=lr, momentum=0.95),
                   loss=log_dice_loss,
                   metrics=[mean_IOU_gpu, dice_metric])
     return model
