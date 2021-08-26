@@ -66,63 +66,68 @@ def calculate_area(pred_cup, pred_disc, test_idx):
             areas.append(0)
     return areas
 
-def plot_results(result, epochs):
-    epoch = range(1, epochs + 1)
-    fig = plt.figure(figsize=(15,6))
-    
-    ax = fig.add_subplot(1,3,1)
-    ax.plot(epoch, result.history['dice_metric'])
-    ax.plot(epoch, result.history['val_dice_metric'])
-    ax.set_title('Dice do Modelo')
-    ax.set_ylabel('Margem de acertos')
-    ax.set_xlabel('Épocas')
-    ax.legend(['Train','Val'], loc='upper left')
-    
-    ax = fig.add_subplot(1,3,2)
-    ax.plot(epoch, result.history['mean_IOU_gpu'])
-    ax.plot(epoch, result.history['val_mean_IOU_gpu'])
-    ax.set_title('IOU do Modelo')
-    ax.set_ylabel('Margem de acertos')
-    ax.set_xlabel('Épocas')
-    ax.legend(['Train','Val'], loc='upper left')
-    
-    ax = fig.add_subplot(1,3,3)
-    ax.plot(epoch, result.history['loss'])
-    ax.plot(epoch, result.history['val_loss'])
-    ax.set_title('Margem de erro')
-    ax.set_ylabel('Erros')
-    ax.set_xlabel('Épocas')
-    ax.legend(['Train','Val'], loc='upper left')
-    plt.show()
-    
-path_results = os.path.join(os.path.dirname(os.getcwd()), 'results',
-                                  '{},{}'.format(datetime.now().strftime('%d.%m,%H-%M'), 'results_cdr'))
+def plot_results(result, epochs, arq):
+    try:
+        epoch = range(1, epochs + 1)
+        fig = plt.figure(figsize=(15,6))
+
+        ax = fig.add_subplot(1,3,1)
+        ax.plot(epoch, result.history['dice_metric'])
+        ax.plot(epoch, result.history['val_dice_metric'])
+        ax.set_title('Dice do Modelo')
+        ax.set_ylabel('Margem de acertos')
+        ax.set_xlabel('Épocas')
+        ax.legend(['Train','Val'], loc='upper left')
+
+        ax = fig.add_subplot(1,3,2)
+        ax.plot(epoch, result.history['mean_IOU_gpu'])
+        ax.plot(epoch, result.history['val_mean_IOU_gpu'])
+        ax.set_title('IOU do Modelo')
+        ax.set_ylabel('Margem de acertos')
+        ax.set_xlabel('Épocas')
+        ax.legend(['Train','Val'], loc='upper left')
+
+        ax = fig.add_subplot(1,3,3)
+        ax.plot(epoch, result.history['loss'])
+        ax.plot(epoch, result.history['val_loss'])
+        ax.set_title('Margem de erro')
+        ax.set_ylabel('Erros')
+        ax.set_xlabel('Épocas')
+        ax.legend(['Train','Val'], loc='upper left')
+        plt.show()
+        res = os.path.join(folder(path_results), '{}'.format(arq+'png'))
+        plt.savefig(res, format='png')
+    except:
+        print('Erro ao gerar gráficos')
+        
+def root_path(name_folder):
+    return folder(os.path.join(os.path.dirname(os.getcwd()), 'results',
+                                  '{},{}'.format(datetime.now().strftime('%d.%m,%H-%M'), name_folder)))
 
 def folder(folder_name):
     if not os.path.exists(folder_name):
         os.makedirs(folder_name)
     return folder_name
     
-def save_diameters(diametros_cup, diametros_disc, file_name):
+def save_diameters(diametros_cup, diametros_disc, root_path, file_name):
     cup = np.array(diametros_cup)
     disc = np.array(diametros_disc)
     df = pd.DataFrame(data={'cup - dm': cup[:,0], 'cup - dM': cup[:,1], 'disc - dm': disc[:,0], 'disc - dM': disc[:,1]})
-    df.to_csv(os.path.join(folder(path_results), file_name+'_diameters.csv'), decimal=',', sep='\t', index=False)
+    df.to_csv(os.path.join(root_path, file_name+'_diameters.csv'), decimal=',', sep='\t')
     return df
     
-def create_table_result(pred_cup, pred_disc, test_idx, file_name):
+def create_table_result(pred_cup, pred_disc, test_idx, root_path, file_name):
     cdrs, diametros_cup, diametros_disc = calculate_cdr(pred_cup, pred_disc, test_idx)
     areas = calculate_area(pred_cup, pred_disc, test_idx)
     df = pd.DataFrame(data = {'cdr': cdrs, 'area': areas})
-    df.to_csv(os.path.join(folder(path_results), file_name+'_cdrs.csv'), decimal=',', sep='\t', index=False)
-    df_diameters = save_diameters(diametros_cup, diametros_disc, file_name)
+    df.to_csv(os.path.join(root_path, file_name+'_cdrs.csv'), decimal=',', sep='\t')
+    df_diameters = save_diameters(diametros_cup, diametros_disc, root_path, file_name)
     return df, df_diameters
 
 
-def save_iou_dice(iou, dice, arq):
-    path_results = os.path.join(os.path.dirname(os.getcwd()), 'results')
-    path_results = os.path.join(folder(path_results), '{},{}'.format(datetime.now().strftime('%d.%m,%H-%M'), arq))
+def save_iou_dice(iou, dice, root_path, arq):
+    res = os.path.join(root_path, arq)
 
-    with open(path_results, 'w') as arquivo:
+    with open(res, 'w') as arquivo:
         arquivo.write('iou: ' + str(iou).replace('.', ',')+'\n')
         arquivo.write('dice: ' + str(dice).replace('.', ','))

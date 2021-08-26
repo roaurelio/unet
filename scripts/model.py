@@ -22,7 +22,6 @@ def create_compile_model(img_size, lr):
                   metrics=[mean_IOU_gpu, dice_metric])
     return model
 
-
 def mean_IOU_gpu(X, Y):
     """Computes mean Intersection-over-Union (IOU) for two arrays of binary images.
     Assuming X and Y are of shape (n_images, w, h)."""
@@ -162,8 +161,8 @@ def folder(folder_name):
         os.makedirs(folder_name)
     return folder_name
 
-def train(images, masks, disc_locations, path, model, epochs, X_valid, Y_valid, img_size, spe, weights_folder):
-    return model.fit(data_generator(images, masks, disc_locations, img_size, train_or_test='train', batch_size=1), 
+def train(images, masks, path, model, epochs, X_valid, Y_valid, img_size, spe, weights_folder):
+    return model.fit(data_generator(images, masks, img_size, train_or_test='train', batch_size=1), 
                               steps_per_epoch=spe,
                               max_queue_size=1,
                               validation_data=(X_valid, Y_valid),
@@ -174,9 +173,9 @@ def train(images, masks, disc_locations, path, model, epochs, X_valid, Y_valid, 
                                                monitor='val_loss', mode='min', save_best_only=True, 
                                                save_weights_only=False, verbose=0)])
     
-def train_cup(images, masks, disc_locations, path, model, epochs, X_valid, Y_valid, img_size, spe):
-    return train(images, masks, disc_locations, path, model, epochs, X_valid, Y_valid, img_size, spe, weights_folder_cup)
+def train_cup(images, masks, path, model, epochs, X_valid, Y_valid, img_size, spe):
+    return train(images, masks, path, model, epochs, X_valid, Y_valid, img_size, spe, weights_folder_cup)
       
-def train_disc(images, masks, disc_locations, path, model, epochs, X_valid, Y_valid, img_size, spe):
-    return train(images, masks, disc_locations, path, model, epochs, X_valid, Y_valid, img_size, spe, weights_folder_disc)
+def train_disc(images, masks, path, model, epochs, X_valid, Y_valid, img_size, spe):
+    return train(images, masks, path, model, epochs, X_valid, Y_valid, img_size, spe, weights_folder_disc)
         

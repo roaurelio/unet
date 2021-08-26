@@ -17,6 +17,12 @@ def get_images():
     disc_locations = h5f['RIM-ONE v3/512 px/disc_locations']
     return images, cups, disc_locations
 
+def get_images_disc():
+    images = h5f['RIM-ONE v3/512 px/images']
+    discs = h5f['RIM-ONE v3/512 px/disc']
+    disc_locations = h5f['RIM-ONE v3/512 px/disc_locations']
+    return images, discs, disc_locations
+
 train_idg = DualImageDataGenerator(horizontal_flip=True, vertical_flip=True,
                                    rotation_range=20, width_shift_range=0.1, height_shift_range=0.1,
                                    zoom_range=(0.8, 1.2),

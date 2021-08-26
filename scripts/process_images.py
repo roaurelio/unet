@@ -85,7 +85,7 @@ def preprocess(batch_X, batch_y, train_or_test='train'):
     return batch_X, batch_y
 
 
-def data_generator(X, y, disc_locations, resize_to=128, train_or_test='train', batch_size=3, return_orig=False, stationary=False):
+def data_generator(X, y, resize_to=128, train_or_test='train', batch_size=3, return_orig=False, stationary=False):
     """Gets random batch of data, 
     divides by 255,
     feeds it to DualImageDataGenerator."""
@@ -104,19 +104,20 @@ def data_generator(X, y, disc_locations, resize_to=128, train_or_test='train', b
             else:
                 idx = np.random.choice(test_idx, size=batch_size)
                 
-        batch_X = [X[i][disc_locations[i][0]:disc_locations[i][2], disc_locations[i][1]:disc_locations[i][3]] 
-                   for i in idx]
-        batch_X = [np.rollaxis(img, 2) for img in batch_X]
+        #batch_X = [X[i][disc_locations[i][0]:disc_locations[i][2], disc_locations[i][1]:disc_locations[i][3]] 
+        #           for i in idx]
+        #batch_X = [np.rollaxis(img, 2) for img in batch_X]
 
-        batch_X = [skimage.transform.resize(np.rollaxis(img, 0, 3), (resize_to, resize_to))
-                   for img in batch_X]
+        batch_X = [skimage.transform.resize(X[i], (resize_to, resize_to))
+                   for i in idx]
         batch_X = np.array(batch_X).copy()
         
         
-        batch_y = [y[i][disc_locations[i][0]:disc_locations[i][2], disc_locations[i][1]:disc_locations[i][3]] 
-                   for i in idx]
-        batch_y = [img[..., 0] for img in batch_y]
-        batch_y = [skimage.transform.resize(img, (resize_to, resize_to))[..., None] for img in batch_y]
+        #batch_y = [y[i][disc_locations[i][0]:disc_locations[i][2], disc_locations[i][1]:disc_locations[i][3]] 
+        #           for i in idx]
+        #batch_y = [y[i][..., 0] for i in idx]
+
+        batch_y = [skimage.transform.resize(y[i], (resize_to, resize_to))[..., None] for i in idx]
         batch_y = np.array(batch_y).copy()
                 
         if return_orig:
