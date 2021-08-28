@@ -5,6 +5,10 @@ import matplotlib.pyplot as plt
 import sys
 import os
 from datetime import datetime
+import skimage
+import skimage.measure
+from operator import attrgetter
+
  
 def ellipseFitting(img):
     contours, hierarchy = cv2.findContours(img.copy(),cv2.RETR_EXTERNAL,cv2.CHAIN_APPROX_NONE)
@@ -23,7 +27,34 @@ def obtain_ellipse(img):
         kernel = np.ones((10,10),np.uint8)
         return ellipseFitting(cv2.morphologyEx(img, cv2.MORPH_CLOSE, kernel))
 
+def get_image_diameter(image):
+    labeled = skimage.measure.label(np.ceil(image))
+    region_props = skimage.measure.regionprops(labeled)
+    component = max(region_props, key=attrgetter('area'))     
+    return component.bbox[2] - component.bbox[0]
+
 def calculate_cdr(pred_cup, pred_disc, test_idx):
+    cdrs = []
+    diametros_cup = []
+    diametros_disc = []
+    for i, img_no in enumerate(test_idx):
+        try:
+            d_cup = get_image_diameter(pred_cup[i])
+            d_disc = get_image_diameter(pred_disc[i])
+
+            cdr = d_cup/d_disc
+            diametros_cup.append(d_cup)
+            diametros_disc.append(d_disc)
+            cdrs.append(cdr)
+            print('image #{} - cdr = {}'.format(img_no, cdr)) 
+        
+        except ValueError as error:
+            print(error)
+            cdrs.append(0)
+    return cdrs, diametros_cup, diametros_disc
+
+    
+def calculate_cdr_old(pred_cup, pred_disc, test_idx):
     cdrs = []
     diametros_cup = []
     diametros_disc = []
@@ -66,7 +97,18 @@ def calculate_area(pred_cup, pred_disc, test_idx):
             areas.append(0)
     return areas
 
-def plot_results(result, epochs, arq):
+def calculate_area_rimone(pred_cup, pred_disc, test_idx):
+    areas = []
+    for i in range(len(test_idx)):
+        cup = np.array(pred_cup[i], dtype='float').sum()
+        disc = np.array(pred_disc[i], dtype='float').sum()
+        if (disc > 0):
+            areas.append(cup/disc)
+        else:
+            areas.append(0)
+    return areas
+
+def plot_results(result, epochs, root_path, arq):
     try:
         epoch = range(1, epochs + 1)
         fig = plt.figure(figsize=(15,6))
@@ -95,10 +137,11 @@ def plot_results(result, epochs, arq):
         ax.set_xlabel('Épocas')
         ax.legend(['Train','Val'], loc='upper left')
         plt.show()
-        res = os.path.join(folder(path_results), '{}'.format(arq+'png'))
+        res = os.path.join(root_path, '{}'.format(arq+'.png'))
         plt.savefig(res, format='png')
     except:
         print('Erro ao gerar gráficos')
+
         
 def root_path(name_folder):
     return folder(os.path.join(os.path.dirname(os.getcwd()), 'results',
@@ -112,13 +155,21 @@ def folder(folder_name):
 def save_diameters(diametros_cup, diametros_disc, root_path, file_name):
     cup = np.array(diametros_cup)
     disc = np.array(diametros_disc)
-    df = pd.DataFrame(data={'cup - dm': cup[:,0], 'cup - dM': cup[:,1], 'disc - dm': disc[:,0], 'disc - dM': disc[:,1]})
+    df = pd.DataFrame(data={'cup': cup, 'disc': disc})
     df.to_csv(os.path.join(root_path, file_name+'_diameters.csv'), decimal=',', sep='\t')
     return df
     
 def create_table_result(pred_cup, pred_disc, test_idx, root_path, file_name):
     cdrs, diametros_cup, diametros_disc = calculate_cdr(pred_cup, pred_disc, test_idx)
     areas = calculate_area(pred_cup, pred_disc, test_idx)
+    df = pd.DataFrame(data = {'cdr': cdrs, 'area': areas})
+    df.to_csv(os.path.join(root_path, file_name+'_cdrs.csv'), decimal=',', sep='\t')
+    df_diameters = save_diameters(diametros_cup, diametros_disc, root_path, file_name)
+    return df, df_diameters
+
+def create_table_result_rimone(pred_cup, pred_disc, test_idx, root_path, file_name):
+    cdrs, diametros_cup, diametros_disc = calculate_cdr(pred_cup, pred_disc, test_idx)
+    areas = calculate_area_rimone(pred_cup, pred_disc, test_idx)
     df = pd.DataFrame(data = {'cdr': cdrs, 'area': areas})
     df.to_csv(os.path.join(root_path, file_name+'_cdrs.csv'), decimal=',', sep='\t')
     df_diameters = save_diameters(diametros_cup, diametros_disc, root_path, file_name)

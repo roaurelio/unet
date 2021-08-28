@@ -9,19 +9,19 @@ from sklearn.model_selection import KFold
 import h5py
 import os
 
-h5f = h5py.File(os.path.join(os.path.dirname(os.getcwd()), 'data', 'hdf5_datasets', 'RIM_ONE_v3.hdf5'), 'r')
+h5f = h5py.File(os.path.join(os.path.dirname(os.getcwd()), 'data', 'hdf5_datasets', 'RIM_ONE_V3.hdf5'), 'r')
+suf = '_gap_20'
+
 
 def get_images():
-    images = h5f['RIM-ONE v3/512 px/images']
-    cups = h5f['RIM-ONE v3/512 px/cup']
-    disc_locations = h5f['RIM-ONE v3/512 px/disc_locations']
-    return images, cups, disc_locations
+    images = h5f['RIM-ONE v3/512 px/img_cropped'+suf]
+    cups = h5f['RIM-ONE v3/512 px/cup_cropped'+suf]
+    return images, cups
 
 def get_images_disc():
-    images = h5f['RIM-ONE v3/512 px/images']
-    discs = h5f['RIM-ONE v3/512 px/disc']
-    disc_locations = h5f['RIM-ONE v3/512 px/disc_locations']
-    return images, discs, disc_locations
+    images = h5f['RIM-ONE v3/512 px/img_cropped'+suf]
+    discs = h5f['RIM-ONE v3/512 px/disc_cropped'+suf]
+    return images, discs
 
 train_idg = DualImageDataGenerator(horizontal_flip=True, vertical_flip=True,
                                    rotation_range=20, width_shift_range=0.1, height_shift_range=0.1,
@@ -81,7 +81,7 @@ def get_color_channel(channel, images):
         img_channel.append(img)
     return img_channel
     
-images, _, _ = get_images()
+images, _ = get_images()
 
 train_idx_cv, test_idx_cv = [], []
 
@@ -103,7 +103,8 @@ def preprocess(batch_X, batch_y, train_or_test='train'):
     batch_X = np.array(batch_X)
     return batch_X, batch_y
 
-def data_generator(X, y, disc_locations, resize_to=128, train_or_test='train', batch_size=3, return_orig=False, stationary=False):
+def data_generator(X, y, resize_to=128, train_or_test='train', batch_size=3, return_orig=False, stationary=False):
+    
     while True:
         if train_or_test == 'train':
             idx = np.random.choice(train_idx, size=batch_size)
@@ -112,18 +113,21 @@ def data_generator(X, y, disc_locations, resize_to=128, train_or_test='train', b
                 idx = test_idx[:batch_size]
             else:
                 idx = np.random.choice(test_idx, size=batch_size)
-        batch_X = [X[i][disc_locations[i][0]:disc_locations[i][2], disc_locations[i][1]:disc_locations[i][3]] 
+                
+        #batch_X = [X[i][disc_locations[i][0]:disc_locations[i][2], disc_locations[i][1]:disc_locations[i][3]] 
+        #           for i in idx]
+        #batch_X = [np.rollaxis(img, 2) for img in batch_X]
+        batch_X = [skimage.transform.resize(X[i], (resize_to, resize_to))
                    for i in idx]
-        batch_X = [np.rollaxis(img, 2) for img in batch_X]
-        batch_X = [skimage.transform.resize(np.rollaxis(img, 0, 3), (resize_to, resize_to))
-                   for img in batch_X]
         batch_X = np.array(batch_X).copy()
         
-        batch_y = [y[i][disc_locations[i][0]:disc_locations[i][2], disc_locations[i][1]:disc_locations[i][3]] 
-                   for i in idx]
-        batch_y = [img[..., 0] for img in batch_y]
-        batch_y = [skimage.transform.resize(img, (resize_to, resize_to))[..., None] for img in batch_y]
+        #batch_y = [y[i][disc_locations[i][0]:disc_locations[i][2], disc_locations[i][1]:disc_locations[i][3]] 
+        #           for i in idx]
+        #batch_y = [img[..., 0] for img in batch_y]
+        batch_y = [skimage.transform.resize(y[i], (resize_to, resize_to)) for i in idx]
+        
         batch_y = np.array(batch_y).copy()
+        
         if return_orig:
             batch_X_orig, batch_Y_orig = batch_X.copy(), batch_y.copy()
         
