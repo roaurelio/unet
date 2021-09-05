@@ -116,7 +116,7 @@ def get_unet_light(img_rows=256, img_cols=256):
 
 
 
-def predict(images, img_list, mask_list, model, img_size):
+def predict(images, img_list, mask_list, model, img_size, test_idx):
     pred_iou, pred_dice = [], []
     pred_result = []
 
@@ -153,11 +153,11 @@ def predict(images, img_list, mask_list, model, img_size):
 
 
 							  
-arch_name = "OD Cup, U-Net light on RIM-ONE v3 512 px cropped to OD 128 px fold 0, SGD, log_dice loss"
+arch_name = "OD Cup, U-Net RIM-ONE v3 128 px, log_dice loss"
 weights_folder_cup = os.path.join(os.path.dirname(os.getcwd()), 'models_weights',
                               '{},{}'.format(datetime.now().strftime('%d.%m,%H-%M'), arch_name))
 
-arch_name = "OD Disc, U-Net light on RIM-ONE v3 512 px cropped to OD 128 px fold 0, SGD, log_dice loss"
+arch_name = "OD Disc, U-Net RIM-ONE v3 128 px, log_dice loss"
 weights_folder_disc = os.path.join(os.path.dirname(os.getcwd()), 'models_weights',
                               '{},{}'.format(datetime.now().strftime('%d.%m,%H-%M'), arch_name))
 
@@ -166,8 +166,8 @@ def folder(folder_name):
         os.makedirs(folder_name)
     return folder_name
 
-def train(images, masks, path, model, epochs, X_valid, Y_valid, img_size, spe, weights_folder):
-    return model.fit(data_generator(images, masks, img_size, train_or_test='train', batch_size=1), 
+def train(images, masks, path, model, epochs, X_valid, Y_valid, img_size, spe, weights_folder, train_idx, test_idx):
+    return model.fit(data_generator(images, masks, train_idx, test_idx, img_size, train_or_test='train', batch_size=1), 
                               steps_per_epoch=spe,
                               max_queue_size=1,
                               validation_data=(X_valid, Y_valid),
@@ -178,9 +178,9 @@ def train(images, masks, path, model, epochs, X_valid, Y_valid, img_size, spe, w
                                                monitor='val_loss', mode='min', save_best_only=True, 
                                                save_weights_only=False, verbose=0)])
     
-def train_cup(images, masks, path, model, epochs, X_valid, Y_valid, img_size, spe):
-    return train(images, masks, path, model, epochs, X_valid, Y_valid, img_size, spe, weights_folder_cup)
+def train_cup(images, masks, path, model, epochs, X_valid, Y_valid, img_size, spe, train_idx, test_idx, weights_folder_cup):
+    return train(images, masks, path, model, epochs, X_valid, Y_valid, img_size, spe, weights_folder_cup, train_idx, test_idx)
       
-def train_disc(images, masks, path, model, epochs, X_valid, Y_valid, img_size, spe):
-    return train(images, masks, path, model, epochs, X_valid, Y_valid, img_size, spe, weights_folder_disc)
+def train_disc(images, masks, path, model, epochs, X_valid, Y_valid, img_size, spe, train_idx, test_idx, weights_folder_disc):
+    return train(images, masks, path, model, epochs, X_valid, Y_valid, img_size, spe, weights_folder_disc, train_idx, test_idx)
         

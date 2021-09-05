@@ -141,10 +141,14 @@ def plot_results(result, epochs, root_path, arq):
         plt.savefig(res, format='png')
     except:
         print('Erro ao gerar gráficos')
-
         
-def root_path(name_folder):
-    return folder(os.path.join(os.path.dirname(os.getcwd()), 'results',
+def save_predict_images(root_path, mask, test_idx, images):
+    res = folder(os.path.join(root_path, 'predict_images', mask))
+    for i, img_no in enumerate(test_idx):
+        plt.imsave(os.path.join(res, '{}'.format('img_'+str(img_no)+'.png')), images[i])
+        
+def root_path(name_folder, k):
+    return folder(os.path.join(os.path.dirname(os.getcwd()), 'results_fold_'+str(k),
                                   '{},{}'.format(datetime.now().strftime('%d.%m,%H-%M'), name_folder)))
 
 def folder(folder_name):
@@ -167,17 +171,21 @@ def create_table_result(pred_cup, pred_disc, test_idx, root_path, file_name):
     df_diameters = save_diameters(diametros_cup, diametros_disc, root_path, file_name)
     return df, df_diameters
 
-def create_table_result_rimone(pred_cup, pred_disc, test_idx, root_path, file_name):
+def create_table_result_rimone(pred_cup, pred_disc, test_idx, root_path, file_name, labels):
     cdrs, diametros_cup, diametros_disc = calculate_cdr(pred_cup, pred_disc, test_idx)
     areas = calculate_area_rimone(pred_cup, pred_disc, test_idx)
-    df = pd.DataFrame(data = {'cdr': cdrs, 'area': areas})
+    
+    results_labels = []
+    for i in range(len(test_idx)):
+        results_labels.append('G' if int(labels[test_idx[i]])==1 else 'N')
+    
+    df = pd.DataFrame(data = {'label': results_labels, 'cdr': cdrs, 'area': areas})
     df.to_csv(os.path.join(root_path, file_name+'_cdrs.csv'), decimal=',', sep='\t')
     df_diameters = save_diameters(diametros_cup, diametros_disc, root_path, file_name)
     return df, df_diameters
 
-
 def save_iou_dice(iou, dice, root_path, arq):
-    res = os.path.join(root_path, arq)
+    res = os.path.join(folder(root_path), arq)
 
     with open(res, 'w') as arquivo:
         arquivo.write('iou: ' + str(iou).replace('.', ',')+'\n')
