@@ -151,16 +151,6 @@ def predict(images, img_list, mask_list, model, img_size, test_idx):
         
     return pred_iou, pred_dice, pred_result
 
-
-							  
-arch_name = "OD Cup, U-Net RIM-ONE v3 128 px, log_dice loss"
-weights_folder_cup = os.path.join(os.path.dirname(os.getcwd()), 'models_weights',
-                              '{},{}'.format(datetime.now().strftime('%d.%m,%H-%M'), arch_name))
-
-arch_name = "OD Disc, U-Net RIM-ONE v3 128 px, log_dice loss"
-weights_folder_disc = os.path.join(os.path.dirname(os.getcwd()), 'models_weights',
-                              '{},{}'.format(datetime.now().strftime('%d.%m,%H-%M'), arch_name))
-
 def folder(folder_name):
     if not os.path.exists(folder_name):
         os.makedirs(folder_name)

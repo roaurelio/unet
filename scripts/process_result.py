@@ -51,6 +51,8 @@ def calculate_cdr(pred_cup, pred_disc, test_idx):
         except ValueError as error:
             print(error)
             cdrs.append(0)
+            diametros_cup.append(0)
+            diametros_disc.append(0)
     return cdrs, diametros_cup, diametros_disc
 
     
@@ -147,8 +149,12 @@ def save_predict_images(root_path, mask, test_idx, images):
     for i, img_no in enumerate(test_idx):
         plt.imsave(os.path.join(res, '{}'.format('img_'+str(img_no)+'.png')), images[i])
         
-def root_path(name_folder, k):
+def root_path_kfold(name_folder, k):
     return folder(os.path.join(os.path.dirname(os.getcwd()), 'results_fold_'+str(k),
+                                  '{},{}'.format(datetime.now().strftime('%d.%m,%H-%M'), name_folder)))
+
+def root_path(name_folder):
+    return folder(os.path.join(os.path.dirname(os.getcwd()), 'results',
                                   '{},{}'.format(datetime.now().strftime('%d.%m,%H-%M'), name_folder)))
 
 def folder(folder_name):

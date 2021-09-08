@@ -13,7 +13,7 @@ from datetime import datetime
 
 NUM_EPOCHS = 500
 SPE = 99
-IMG_SIZE=128
+IMG_SIZE = 128
 
 def create_compile_model(img_size, lr):
     model = get_unet_light(img_rows=img_size, img_cols=img_size)
@@ -110,8 +110,6 @@ def get_unet_light(img_rows=256, img_cols=256):
 
     return Model(inputs=inputs, outputs=conv10)
 
-
-
 def predict(images, img_list, mask_list, model, img_size):
     pred_iou, pred_dice = [], []
     pred_result = []
@@ -147,15 +145,6 @@ def predict(images, img_list, mask_list, model, img_size):
         
     return pred_iou, pred_dice, pred_result
 
-
-arch_name = "OD Cup, U-Net light on DRISHTI-GS 512 px cropped to OD 128 px fold 0, SGD, log_dice loss"
-weights_folder_cup = os.path.join(os.path.dirname(os.getcwd()), 'models_weights',
-                              '{},{}'.format(datetime.now().strftime('%d.%m,%H-%M'), arch_name))
-
-arch_name = "OD Disc, U-Net light on DRISHTI-GS 512 px cropped to OD 128 px fold 0, SGD, log_dice loss"
-weights_folder_disc = os.path.join(os.path.dirname(os.getcwd()), 'models_weights',
-                              '{},{}'.format(datetime.now().strftime('%d.%m,%H-%M'), arch_name))
-
 def folder(folder_name):
     if not os.path.exists(folder_name):
         os.makedirs(folder_name)
@@ -173,9 +162,9 @@ def train(images, masks, path, model, epochs, X_valid, Y_valid, img_size, spe, w
                                                monitor='val_loss', mode='min', save_best_only=True, 
                                                save_weights_only=False, verbose=0)])
     
-def train_cup(images, masks, path, model, epochs, X_valid, Y_valid, img_size, spe):
+def train_cup(images, masks, path, model, epochs, X_valid, Y_valid, img_size, spe, weights_folder_cup):
     return train(images, masks, path, model, epochs, X_valid, Y_valid, img_size, spe, weights_folder_cup)
       
-def train_disc(images, masks, path, model, epochs, X_valid, Y_valid, img_size, spe):
+def train_disc(images, masks, path, model, epochs, X_valid, Y_valid, img_size, spe, weights_folder_disc):
     return train(images, masks, path, model, epochs, X_valid, Y_valid, img_size, spe, weights_folder_disc)
         
