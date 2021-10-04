@@ -8,6 +8,8 @@ import matplotlib.pyplot as plt
 from sklearn.model_selection import KFold
 import h5py
 import os
+from skimage.color import rgb2hsv
+from skimage.color import rgb2lab
 
 h5f = h5py.File(os.path.join(os.path.dirname(os.getcwd()), 'data', 'hdf5_datasets', 'RIM_ONE_V3.hdf5'), 'r')
 
@@ -26,19 +28,20 @@ test_idg = DualImageDataGenerator()
 def convert_to_hsv_color(images):
     img_channel = []
     for i in (images):
-        img_channel.append(cv2.cvtColor(i, cv2.COLOR_BGR2HSV))
+        img_channel.append(rgb2hsv(i))
     return img_channel
 
 def convert_to_lab_color(images):
     img_channel = []
     for i in (images):
-        img_channel.append(cv2.cvtColor(i, cv2.COLOR_BGR2LAB))
+        img_channel.append(rgb2lab(i)/255)
     return img_channel
+
 
 def convert_to_gray(images):
     img_channel = []
     for i in (images):
-        gray = cv2.cvtColor(i, cv2.COLOR_BGR2GRAY)
+        gray = cv2.cvtColor(np.array(i, dtype=np.float32), cv2.COLOR_BGR2GRAY)
         img = np.zeros(i.shape)
         img[:,:,0] = gray
         img[:,:,1] = gray
@@ -51,7 +54,7 @@ def convert_to_gray(images):
 def convert_to_hsv(channel, images):
     img_channel = []
     for i in (images):
-        hsv_img = cv2.cvtColor(i, cv2.COLOR_BGR2HSV)
+        hsv_img = rgb2hsv(i)
         img = np.zeros(hsv_img.shape)
         img[:,:,channel] = hsv_img[:,:,channel]
         img_channel.append(img)
@@ -60,7 +63,7 @@ def convert_to_hsv(channel, images):
 def convert_to_lab(channel, images):
     img_channel = []
     for i in (images):
-        hsv_img = cv2.cvtColor(i, cv2.COLOR_BGR2LAB)
+        hsv_img = rgb2lab(i)/255
         img = np.zeros(hsv_img.shape)
         img[:,:,channel] = hsv_img[:,:,channel]
         img_channel.append(img)
@@ -114,4 +117,97 @@ def data_generator(X, y, train_idx, test_idx, resize_to=128, train_or_test='trai
         else:
             yield batch_X, batch_y, batch_X_orig, batch_Y_orig
             
-            
+
+def create_all_color_list(images, cups, discs, idx_list):
+    
+    allImages = []
+    allCups = []
+    allDiscs = []
+
+    aux_images = []
+    aux_cups = []
+    aux_discs = []
+    
+    for idx in range(len(idx_list)):
+        i = idx_list[idx]
+        aux_images.append(images[i])
+        aux_cups.append(cups[i])
+        aux_discs.append(discs[i])
+    
+    allImages.extend(aux_images)
+    allCups.extend(aux_cups)
+    allDiscs.extend(aux_discs)
+
+    hsv_images = convert_to_hsv_color(aux_images)
+
+    allImages.extend(hsv_images)
+    allCups.extend(aux_cups)
+    allDiscs.extend(aux_discs)
+
+    hsv_images = convert_to_hsv(0, aux_images)
+
+    allImages.extend(hsv_images)
+    allCups.extend(aux_cups)
+    allDiscs.extend(aux_discs)
+
+    hsv_images = convert_to_hsv(1, aux_images)
+
+    allImages.extend(hsv_images)
+    allCups.extend(aux_cups)
+    allDiscs.extend(aux_discs)
+
+    hsv_images = convert_to_hsv(2, aux_images)
+
+    allImages.extend(hsv_images)
+    allCups.extend(aux_cups)
+    allDiscs.extend(aux_discs)
+
+    lab_images = convert_to_lab_color(aux_images)
+
+    allImages.extend(lab_images)
+    allCups.extend(aux_cups)
+    allDiscs.extend(aux_discs)
+
+    lab_images = convert_to_lab(0, aux_images)
+
+    allImages.extend(lab_images)
+    allCups.extend(aux_cups)
+    allDiscs.extend(aux_discs)
+
+    lab_images = convert_to_lab(1, aux_images)
+
+    allImages.extend(lab_images)
+    allCups.extend(aux_cups)
+    allDiscs.extend(aux_discs)
+    lab_images = convert_to_lab(2, aux_images)
+
+    allImages.extend(lab_images)
+    allCups.extend(aux_cups)
+    allDiscs.extend(aux_discs)
+    
+    rgb_images = convert_to_gray(aux_images)
+
+    allImages.extend(rgb_images)
+    allCups.extend(aux_cups)
+    allDiscs.extend(aux_discs)
+
+    rgb_images = get_color_channel(0, aux_images)
+
+    allImages.extend(rgb_images)
+    allCups.extend(aux_cups)
+    allDiscs.extend(aux_discs)
+
+    rgb_images = get_color_channel(1, aux_images)
+
+    allImages.extend(rgb_images)
+    allCups.extend(aux_cups)
+    allDiscs.extend(aux_discs)
+
+    rgb_images = get_color_channel(2, aux_images)
+
+    allImages.extend(rgb_images)
+    allCups.extend(aux_cups)
+    allDiscs.extend(aux_discs)
+
+    return allImages, allCups, allDiscs
+

@@ -6,7 +6,9 @@ import skimage.transform
 import skimage.exposure
 import cv2
 import matplotlib.pyplot as plt
-
+from skimage.color import rgb2gray
+from skimage.color import rgb2hsv
+from skimage.color import rgb2lab
 
 train_idx = np.arange(0, 50)
 test_idx  = np.arange(0, 51)
@@ -21,19 +23,19 @@ test_idg = DualImageDataGenerator()
 def convert_to_hsv_color(images):
     img_channel = []
     for i in (images):
-        img_channel.append(cv2.cvtColor(i, cv2.COLOR_BGR2HSV))
+        img_channel.append(rgb2hsv(i))
     return img_channel
 
 def convert_to_lab_color(images):
     img_channel = []
     for i in (images):
-        img_channel.append(cv2.cvtColor(i, cv2.COLOR_BGR2LAB))
+        img_channel.append(rgb2lab(i)/255)
     return img_channel
 
 def convert_to_gray(images):
     img_channel = []
     for i in (images):
-        gray = cv2.cvtColor(i, cv2.COLOR_BGR2GRAY)
+        gray =  rgb2gray(i)
         img = np.zeros(i.shape)
         img[:,:,0] = gray
         img[:,:,1] = gray
@@ -46,7 +48,7 @@ def convert_to_gray(images):
 def convert_to_hsv(channel, images):
     img_channel = []
     for i in (images):
-        hsv_img = cv2.cvtColor(i, cv2.COLOR_BGR2HSV)
+        hsv_img = rgb2hsv(i)
         img = np.zeros(hsv_img.shape)
         img[:,:,channel] = hsv_img[:,:,channel]
         img_channel.append(img)
@@ -55,9 +57,9 @@ def convert_to_hsv(channel, images):
 def convert_to_lab(channel, images):
     img_channel = []
     for i in (images):
-        hsv_img = cv2.cvtColor(i, cv2.COLOR_BGR2LAB)
-        img = np.zeros(hsv_img.shape)
-        img[:,:,channel] = hsv_img[:,:,channel]
+        lab_img = rgb2lab(i)/255
+        img = np.zeros(lab_img.shape)
+        img[:,:,channel] = lab_img[:,:,channel]
         img_channel.append(img)
     return img_channel
 
@@ -71,9 +73,9 @@ def get_color_channel(channel, images):
     return img_channel
 
 def preprocess(batch_X, batch_y, train_or_test='train'):
-    batch_X = batch_X / 255.0
+   #batch_X = batch_X / 255.0
     # the following line thresholds segmentation mask for DRISHTI-GS, since it contains averaged soft maps:
-    batch_y = batch_y >= 0.5
+   # batch_y = batch_y >= 0.5
     
     if train_or_test == 'train':
         batch_X, batch_y = next(train_idg.flow(batch_X, batch_y, batch_size=len(batch_X), shuffle=False))
@@ -132,3 +134,87 @@ def data_generator(X, y, resize_to=128, train_or_test='train', batch_size=3, ret
 
 
 			
+def create_all_color_list(images, cups, discs):
+    
+    allImages = []
+    allCups = []
+    allDiscs = []
+    
+    print(len(images))
+    
+    allImages.extend(images)
+    allCups.extend(cups)
+    allDiscs.extend(discs)
+
+    hsv_images = convert_to_hsv_color(images)
+
+    allImages.extend(hsv_images)
+    allCups.extend(cups)
+    allDiscs.extend(discs)
+
+    hsv_images = convert_to_hsv(0, images)
+
+    allImages.extend(hsv_images)
+    allCups.extend(cups)
+    allDiscs.extend(discs)
+
+    hsv_images = convert_to_hsv(1, images)
+
+    allImages.extend(hsv_images)
+    allCups.extend(cups)
+    allDiscs.extend(discs)
+
+    hsv_images = convert_to_hsv(2, images)
+
+    allImages.extend(hsv_images)
+    allCups.extend(cups)
+    allDiscs.extend(discs)
+
+    lab_images = convert_to_lab_color(images)
+
+    allImages.extend(lab_images)
+    allCups.extend(cups)
+    allDiscs.extend(discs)
+
+    lab_images = convert_to_lab(0, images)
+
+    allImages.extend(lab_images)
+    allCups.extend(cups)
+    allDiscs.extend(discs)
+
+    lab_images = convert_to_lab(1, images)
+
+    allImages.extend(lab_images)
+    allCups.extend(cups)
+    allDiscs.extend(discs)
+    lab_images = convert_to_lab(2, images)
+
+    allImages.extend(lab_images)
+    allCups.extend(cups)
+    allDiscs.extend(discs)
+    
+    rgb_images = convert_to_gray(images)
+
+    allImages.extend(rgb_images)
+    allCups.extend(cups)
+    allDiscs.extend(discs)
+
+    rgb_images = get_color_channel(0, images)
+
+    allImages.extend(rgb_images)
+    allCups.extend(cups)
+    allDiscs.extend(discs)
+
+    rgb_images = get_color_channel(1, images)
+
+    allImages.extend(rgb_images)
+    allCups.extend(cups)
+    allDiscs.extend(discs)
+
+    rgb_images = get_color_channel(2, images)
+
+    allImages.extend(rgb_images)
+    allCups.extend(cups)
+    allDiscs.extend(discs)
+
+    return allImages, allCups, allDiscs
