@@ -13,14 +13,25 @@ from skimage.color import rgb2lab
 
 h5f = h5py.File(os.path.join(os.path.dirname(os.getcwd()), 'data', 'hdf5_datasets', 'RIM_ONE_V3.hdf5'), 'r')
 
+
 def get_images(suf):
+    h5f = h5py.File(os.path.join(os.path.dirname(os.getcwd()), 'data', 'hdf5_datasets', 'RIM_ONE_V3.hdf5'), 'r')
     images = h5f['RIM-ONE v3/512 px/img_cropped'+suf]
     cups = h5f['RIM-ONE v3/512 px/cup_cropped'+suf]
     discs = h5f['RIM-ONE v3/512 px/disc_cropped'+suf]
+    
     return images, cups, discs
 
+def get_images_and_labels(suf):
+    h5f = h5py.File(os.path.join(os.path.dirname(os.getcwd()), 'data', 'hdf5_datasets', 'RIM_ONE_V3.hdf5'), 'r')
+    images = h5f['RIM-ONE v3/512 px/img_cropped'+suf]
+    cups = h5f['RIM-ONE v3/512 px/cup_cropped'+suf]
+    discs = h5f['RIM-ONE v3/512 px/disc_cropped'+suf]
+    labels = np.array(h5f['RIM-ONE v3/512 px/is_ill'])
+    return images, cups, discs, labels
+
 train_idg = DualImageDataGenerator(horizontal_flip=True, vertical_flip=True,
-                                   rotation_range=20, width_shift_range=0.1, height_shift_range=0.1,
+                                   width_shift_range=0.05, height_shift_range=0.05,
                                    zoom_range=(0.8, 1.2),
                                    fill_mode='constant', cval=0.0)
 test_idg = DualImageDataGenerator()
@@ -34,9 +45,8 @@ def convert_to_hsv_color(images):
 def convert_to_lab_color(images):
     img_channel = []
     for i in (images):
-        img_channel.append(rgb2lab(i)/255)
+        img_channel.append(rgb2lab(i))
     return img_channel
-
 
 def convert_to_gray(images):
     img_channel = []
@@ -63,7 +73,7 @@ def convert_to_hsv(channel, images):
 def convert_to_lab(channel, images):
     img_channel = []
     for i in (images):
-        hsv_img = rgb2lab(i)/255
+        hsv_img = rgb2lab(i)
         img = np.zeros(hsv_img.shape)
         img[:,:,channel] = hsv_img[:,:,channel]
         img_channel.append(img)
@@ -80,6 +90,9 @@ def get_color_channel(channel, images):
 
 			
 def preprocess(batch_X, batch_y, train_or_test='train'):    
+    
+    batch_X = batch_X / 255.0
+    
     if train_or_test == 'train':
         batch_X, batch_y = next(train_idg.flow(batch_X, batch_y, batch_size=len(batch_X), shuffle=False))
     elif train_or_test == 'test':
@@ -137,7 +150,7 @@ def create_all_color_list(images, cups, discs, idx_list):
     allImages.extend(aux_images)
     allCups.extend(aux_cups)
     allDiscs.extend(aux_discs)
-
+    
     hsv_images = convert_to_hsv_color(aux_images)
 
     allImages.extend(hsv_images)
@@ -179,6 +192,7 @@ def create_all_color_list(images, cups, discs, idx_list):
     allImages.extend(lab_images)
     allCups.extend(aux_cups)
     allDiscs.extend(aux_discs)
+    
     lab_images = convert_to_lab(2, aux_images)
 
     allImages.extend(lab_images)
