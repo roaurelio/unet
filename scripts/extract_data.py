@@ -40,20 +40,31 @@ def extract_DRIONS_DB(db_folder, expert=1):
     file_codes = [fn[-7:-4] for fn in filenames]
     Y = []
     for i, code in enumerate(file_codes):
-        anot_filename = os.path.join(db_folder, 'experts_annotation', 'anotExpert{}_{}.txt'.format(expert, code))
+        anot_filename = os.path.join(db_folder, 'experts_anotation', 'anotExpert{}_{}.txt'.format(expert, code))
+        
         with open(anot_filename) as anot_fin:
             coords = anot_fin.readlines()
-        coords = map(lambda s: map(lambda x: int(round(float(x))), s.split(' , ')),
-                     coords)
-        coords = np.array(coords)
+        
+        list = []
+        x = [list.append(x_i.split(' , ')) for x_i in coords]
+
+        new_list = []
+        for i in list:
+            aux = []
+            for j in i:
+                aux.append(int(round(float(j))))
+            new_list.append(aux)
+                     
         segm_img = np.zeros(orig_resolution, dtype=np.uint8)
-        cv2.fillPoly(segm_img, coords.reshape((1,) + coords.shape), color=1)
+        new_list = np.array(new_list)
+        
+        cv2.fillPoly(segm_img, new_list.reshape((1,) + new_list.shape), color=1)
         Y.append(segm_img)
 
     for i in xrange(len(X)):
         side = result_resolution[0]
-        X[i] = imh.resize_image_to_square(X[i][:, left_cut_thr:], side, pad_cval=0)
-        Y[i] = imh.resize_image_to_square(Y[i][:, left_cut_thr:], side, pad_cval=0)
+        X[i] = skimage.transform.resize(X[i][:, left_cut_thr:], (side, side))
+        Y[i] = skimage.transform.resize(Y[i][:, left_cut_thr:], (side, side))
         Y[i] = Y[i].reshape(Y[i].shape + (1,))
 
     return X, Y, file_codes
